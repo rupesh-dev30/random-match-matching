@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Random Matchmaking Chat</title>
+
+    <style>
+      body {
+        font-family: "Segoe UI", Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+        background: #eef1f5;
+      }
+
+      #container {
+        max-width: 1100px;
+        margin: auto;
+        margin-top: 30px;
+        display: flex;
+        gap: 20px;
+      }
+
+      /* LEFT PANEL */
+      #leftPanel {
+        flex: 3;
+        background: white;
+        border-radius: 10px;
+        padding: 20px;
+        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+      }
+
+      /* RIGHT PANEL */
+      #rightPanel {
+        flex: 1;
+        background: white;
+        border-radius: 10px;
+        padding: 20px;
+        height: fit-content;
+        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+      }
+
+      h2 {
+        margin-top: 0;
+        color: #333;
+      }
+
+      #chatArea {
+        display: none;
+      }
+
+      #welcomeBox {
+        padding: 15px;
+        margin-bottom: 15px;
+        background: #e8f3ff;
+        border-left: 4px solid #007bff;
+        border-radius: 5px;
+        color: #004a9f;
+        font-size: 16px;
+      }
+
+      #matchControls {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 15px;
+      }
+
+      button {
+        padding: 10px 18px;
+        background: #0066ff;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 15px;
+      }
+
+      button:hover {
+        background: #0050d8;
+      }
+
+      button:disabled {
+        background: #9dbdff;
+        cursor: not-allowed;
+      }
+
+      #matchStatus {
+        margin: 10px 0;
+        font-weight: bold;
+        font-size: 16px;
+      }
+
+      #partnerName {
+        color: #444;
+        margin-bottom: 10px;
+      }
+
+      #privateChatArea {
+        display: none;
+        margin-top: 20px;
+      }
+
+      #messages {
+        border: 1px solid #ccc;
+        height: 300px;
+        overflow-y: scroll;
+        padding: 10px;
+        background: #fafafa;
+        border-radius: 5px;
+      }
+
+      #form {
+        display: flex;
+        gap: 10px;
+        margin-top: 10px;
+      }
+
+      #input {
+        flex: 1;
+        padding: 10px;
+        border-radius: 5px;
+        border: 1px solid #999;
+        font-size: 15px;
+      }
+
+      #typing {
+        color: gray;
+        font-style: italic;
+      }
+
+      /* ONLINE USERS PANEL */
+      #onlineUsers {
+        list-style: none;
+        padding-left: 0;
+      }
+
+      #onlineUsers li {
+        padding: 8px;
+        background: #f7f9fc;
+        border-radius: 5px;
+        margin-bottom: 6px;
+        font-size: 14px;
+        border: 1px solid #dde3ea;
+      }
+
+      /* USERNAME INPUT BOX */
+      #usernameBox {
+        background: white;
+        padding: 20px;
+        text-align: center;
+        max-width: 350px;
+        margin: 40px auto;
+        border-radius: 10px;
+        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+      }
+
+      #username {
+        padding: 12px;
+        width: 80%;
+        border-radius: 6px;
+        border: 1px solid #bbb;
+        margin-bottom: 10px;
+      }
+
+      #welcomeUsername {
+        font-weight: bold;
+        color: #0066ff;
+      }
+    </style>
+  </head>
+
+  <body>
+    <!-- USERNAME LOGIN -->
+    <div id="usernameBox">
+      <h2>Enter Your Name</h2>
+      <input id="username" placeholder="Your name..." />
+      <br />
+      <button id="joinBtn">Join</button>
+    </div>
+
+    <!-- MAIN UI -->
+    <div id="container" style="display: none">
+      <!-- LEFT PANEL -->
+      <div id="leftPanel">
+        <h2>Random Matchmaking</h2>
+
+        <div id="welcomeBox">
+          Welcome, <span id="welcomeUsername"></span> 👋
+        </div>
+
+        <!-- Match Controls -->
+        <div id="matchControls">
+          <button id="findRandomBtn">Find Random</button>
+          <button id="nextBtn" disabled>Next</button>
+          <button id="leaveQueueBtn" style="display: none">
+            Stop Searching
+          </button>
+        </div>
+
+        <div id="matchStatus"></div>
+        <div id="partnerName"></div>
+
+        <!-- PRIVATE CHAT -->
+        <div id="privateChatArea">
+          <h3>Chat</h3>
+          <div id="messages"></div>
+
+          <form id="form">
+            <input
+              id="input"
+              autocomplete="off"
+              placeholder="Type a message..."
+            />
+            <button>Send</button>
+          </form>
+
+          <p id="typing"></p>
+        </div>
+      </div>
+
+      <!-- RIGHT PANEL -->
+      <div id="rightPanel">
+        <h3>Online Users</h3>
+        <ul id="onlineUsers"></ul>
+      </div>
+    </div>
+
+    <!-- Socket.IO -->
+    <script src="/socket.io/socket.io.js"></script>
+
+    <script>
+      const socket = io();
+
+      // DOM refs
+      const usernameBox = document.getElementById("usernameBox");
+      const container = document.getElementById("container");
+
+      const usernameInput = document.getElementById("username");
+      const welcomeUsername = document.getElementById("welcomeUsername");
+
+      const findRandomBtn = document.getElementById("findRandomBtn");
+      const nextBtn = document.getElementById("nextBtn");
+      const leaveQueueBtn = document.getElementById("leaveQueueBtn");
+
+      const matchStatus = document.getElementById("matchStatus");
+      const partnerName = document.getElementById("partnerName");
+
+      const privateChatArea = document.getElementById("privateChatArea");
+      const messages = document.getElementById("messages");
+      const input = document.getElementById("input");
+      const form = document.getElementById("form");
+      const typing = document.getElementById("typing");
+
+      const onlineUsersList = document.getElementById("onlineUsers");
+
+      let username = null;
+      window.currentRoom = null;
+
+      /***********************
+       * JOIN WITH USERNAME
+       ***********************/
+      document.getElementById("joinBtn").onclick = () => {
+        username = usernameInput.value.trim();
+        if (!username) return;
+
+        socket.emit("join", username);
+
+        welcomeUsername.textContent = username;
+
+        usernameBox.style.display = "none";
+        container.style.display = "flex";
+      };
+
+      /***********************
+       * MATCH FLOW
+       ***********************/
+      findRandomBtn.onclick = () => {
+        socket.emit("findRandom");
+        matchStatus.textContent = "Searching for a partner...";
+        privateChatArea.style.display = "none";
+        partnerName.textContent = "";
+        leaveQueueBtn.style.display = "inline-block";
+      };
+
+      leaveQueueBtn.onclick = () => {
+        socket.emit("leaveQueue");
+        matchStatus.textContent = "Stopped searching.";
+        leaveQueueBtn.style.display = "none";
+      };
+
+      nextBtn.onclick = () => {
+        socket.emit("next");
+        privateChatArea.style.display = "none";
+        partnerName.textContent = "";
+        nextBtn.disabled = true;
+      };
+
+      socket.on("queued", () => {
+        matchStatus.textContent = "Waiting for another user...";
+        privateChatArea.style.display = "none";
+      });
+
+      socket.on("noMatch", (msg) => {
+        matchStatus.textContent = msg;
+        privateChatArea.style.display = "none";
+        window.currentRoom = null;
+        leaveQueueBtn.style.display = "none";
+      });
+
+      socket.on("matched", ({ room, partnerName: p }) => {
+        window.currentRoom = room;
+        matchStatus.textContent = "Matched!";
+        partnerName.textContent = "Connected to: " + p;
+
+        nextBtn.disabled = false;
+        leaveQueueBtn.style.display = "none";
+
+        messages.innerHTML = "";
+        privateChatArea.style.display = "block";
+      });
+
+      socket.on("partnerLeft", () => {
+        matchStatus.textContent = "Your partner left.";
+        privateChatArea.style.display = "none";
+        partnerName.textContent = "";
+        nextBtn.disabled = true;
+        window.currentRoom = null;
+      });
+
+      /***********************
+       * CHAT MESSAGES
+       ***********************/
+      form.addEventListener("submit", (e) => {
+        e.preventDefault();
+
+        if (!window.currentRoom) return;
+
+        const text = input.value.trim();
+        if (!text) return;
+
+        socket.emit("roomMessage", { room: window.currentRoom, message: text });
+
+        input.value = "";
+      });
+
+      socket.on("roomMessage", ({ user, message, time }) => {
+        const ts = new Date(time).toLocaleTimeString();
+        addMessage(`[${ts}] ${user}: ${message}`);
+      });
+
+      /***********************
+       * TYPING INDICATOR
+       ***********************/
+      let typingTimeout;
+
+      input.addEventListener("input", () => {
+        if (!window.currentRoom) return;
+
+        socket.emit("roomTyping", {
+          room: window.currentRoom,
+          isTyping: true,
+        });
+
+        clearTimeout(typingTimeout);
+        typingTimeout = setTimeout(() => {
+          socket.emit("roomTyping", {
+            room: window.currentRoom,
+            isTyping: false,
+          });
+        }, 700);
+      });
+
+      socket.on("roomTyping", ({ user, isTyping }) => {
+        typing.textContent = isTyping ? `${user} is typing...` : "";
+      });
+
+      /***********************
+       * ONLINE USERS
+       ***********************/
+      socket.on("onlineUsers", (users) => {
+        onlineUsersList.innerHTML = "";
+        users.forEach((u) => {
+          const li = document.createElement("li");
+          li.textContent = u;
+          onlineUsersList.appendChild(li);
+        });
+      });
+
+      /***********************
+       * HELPERS
+       ***********************/
+      function addMessage(msg) {
+        const div = document.createElement("div");
+        div.textContent = msg;
+        messages.appendChild(div);
+        messages.scrollTop = messages.scrollHeight;
+      }
+    </script>
+  </body>
+</html>

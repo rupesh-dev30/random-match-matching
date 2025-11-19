@@ -1,0 +1,85 @@
+SYSTEM DESIGN
+
+STEP 1. WHAT SHOULD HAPPEN WHEN I CLICK FIND STRANGER?
+    1. Click Find
+    2. The system searches for someone
+    3. When found -> connect
+    4. If the other person leaves -> I should get a notification
+    5. If I click Next -> end current chat & find new one
+    6. If no one available -> show waiting
+    7. If i close tab -> system should automatically leave
+
+STEP 2. CONVERT USER ACTIONS -> SYSTEM ACTIONS
+    EVENT 1. USER WANTS A FIND A PARTNER
+        - Add user to queue
+        - Try matching
+      
+    EVENT 2. TWO USERS ARE FREE
+        - Match them
+        - Put both in a room
+        - Notify both
+
+    EVENT 3. USER DISCONNECTS
+        - Remove them from queue
+        - If in room -> inform PARTNER
+        - If in room -> inform PARTNER
+        - Cleanup
+
+    EVENT 4. USERS CLICKS NEXT
+        - Leave current room
+        - Put user back into queue
+      
+    EVENT 5. TIMEOUT
+        - If user waits too long -> remove them from queue
+        - Notify: "No match found"
+
+
+STEP 3: THINK: WHAT STATE DO I NEED TO STORE?
+
+    QUEUE: LIST OF USERS WAITING FOR RANDOM MATCH
+    QUEUE SET: SO USER DOESN'T ACCIDENTALLY ENTER A QUEUE TWICE
+    ROOM MAP: WHICH ROOM USER IS CURRENTLY IN 
+    TIMEOUT MAP: TO HANDLE WAITING TIMEOUT
+    USERNAME: FOR FRONTEND DISPLAY
+
+
+STEP 4: DESIGN THE LOGIC FLOW
+
+ACTION: USER CLICKS FIND
+
+  If already in room -> error
+  If already searching -> error
+
+  else:
+    add to queue
+    mark in queuedSet
+    start timeout
+    tryMatch()
+
+ACTION: tryMatch()
+
+  while(queue >= 2):
+    take first two USERS
+    create room
+    join both
+    clear timeout
+    notify both
+
+ACTION: USER CLICKS NEXT
+
+  leave room
+  notify PARTNER
+  remove from roomMap
+  add yourself back to queue
+
+  tryMatch()
+
+ACTION: DISCONNECTS
+
+  remove from queue
+
+  if in room:
+    notify PARTNER
+    remove both from room
+
+  remove user from maps
