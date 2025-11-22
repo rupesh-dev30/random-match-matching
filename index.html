@@ -250,9 +250,12 @@
         padding: 16px;
         border-radius: 12px;
       }
+
+      /* Fixed height chat area */
       #messages {
         flex: 1;
-        overflow: auto;
+        max-height: 380px; /* FIXED HEIGHT */
+        overflow-y: auto; /* SCROLL ONLY INSIDE CHAT */
         padding: 12px;
         border-radius: 10px;
         background: linear-gradient(
@@ -262,6 +265,11 @@
         );
         border: 1px solid rgba(255, 255, 255, 0.02);
       }
+
+      #messages::-webkit-scrollbar {
+        display: none; /* Chrome, Edge, Safari */
+      }
+
       .msg {
         margin-bottom: 10px;
         font-size: 14px;
@@ -444,7 +452,7 @@
             </div>
           </div>
 
-          <div id="messages"></div>
+          <div id="messages" aria-live="polite" aria-atomic="false"></div>
 
           <div id="typing"></div>
 
@@ -516,6 +524,11 @@
       let cameraEnabled = true;
       let micEnabled = true;
 
+      // de-dup helpers
+      let lastSent = { message: null, time: 0, id: null };
+      // Keep a Set of appended messageIds
+      const appendedMessageIds = new Set();
+
       const rtcConfig = {
         iceServers: [
           { urls: "stun:stun.l.google.com:19302" },
@@ -542,6 +555,8 @@
         matchStatus.textContent = "Searching for partner...";
         partnerName.style.display = "none";
         messages.innerHTML = "";
+        appendedMessageIds.clear();
+        lastSent = { message: null, time: 0, id: null };
         hideLocalFloating();
         leaveQueueBtn.style.display = "inline-block";
       };
@@ -556,6 +571,8 @@
         socket.emit("next");
         hideLocalFloating();
         messages.innerHTML = "";
+        appendedMessageIds.clear();
+        lastSent = { message: null, time: 0, id: null };
         partnerName.style.display = "none";
         nextBtn.disabled = true;
       };
@@ -582,6 +599,8 @@
         partnerName.textContent = "Connected to: " + pName;
 
         messages.innerHTML = "";
+        appendedMessageIds.clear();
+        lastSent = { message: null, time: 0, id: null };
         nextBtn.disabled = false;
         leaveQueueBtn.style.display = "none";
 
@@ -602,20 +621,66 @@
       form.addEventListener("submit", (e) => {
         e.preventDefault();
         if (!window.currentRoom) return;
+
         const msg = input.value.trim();
         if (!msg) return;
-        socket.emit("roomMessage", { room: window.currentRoom, message: msg });
-        input.value = "";
+
+        // create a durable messageId (client-generated)
+        const msgId =
+          (socket.id || "local") +
+          "_" +
+          Date.now() +
+          "_" +
+          Math.random().toString(36).slice(2, 8);
+
+        // store lastSent for fallback duplicate detection
+        lastSent = { message: msg, time: Date.now(), id: msgId };
+
+        // send to server - include messageId and username
+        socket.emit("roomMessage", {
+          room: window.currentRoom,
+          message: msg,
+          messageId: msgId,
+          user: username,
+        });
+
+        // append local bubble (marked with data-msgid)
         appendMessage({
           user: "You",
           message: msg,
           time: new Date().toISOString(),
           self: true,
+          messageId: msgId,
         });
+
+        input.value = "";
       });
 
-      socket.on("roomMessage", ({ user, message, time }) => {
-        appendMessage({ user, message, time, self: false });
+      // Server message handler - robust dedupe
+      socket.on("roomMessage", ({ user, message, time, messageId }) => {
+        // If server includes messageId and we've already appended it -> skip
+        if (messageId && appendedMessageIds.has(messageId)) {
+          return;
+        }
+
+        // Fallback: if server doesn't send messageId, ignore echoes that match our last sent msg (within 3s)
+        if (
+          !messageId &&
+          user === username &&
+          message === lastSent.message &&
+          Date.now() - lastSent.time < 3000
+        ) {
+          return;
+        }
+
+        // Finally append and mark messageId as appended (if present)
+        appendMessage({
+          user,
+          message,
+          time: time || new Date().toISOString(),
+          self: user === username ? false : false, // received messages are always appended as other
+          messageId,
+        });
       });
 
       // typing notifications
@@ -748,9 +813,14 @@
       }
 
       // ====== UI helpers ======
-      function appendMessage({ user, message, time, self }) {
+      function appendMessage({ user, message, time, self, messageId }) {
+        // Avoid appending if messageId already appended
+        if (messageId && appendedMessageIds.has(messageId)) return;
+
         const d = document.createElement("div");
         d.className = "msg " + (self ? "me" : "");
+        if (messageId) d.setAttribute("data-msgid", messageId);
+
         const ts = new Date(time).toLocaleTimeString();
         d.innerHTML = self
           ? `<div style="display:inline-block; background:linear-gradient(90deg,#2b6cff,#6b58ff); padding:10px 12px; border-radius:12px; color:white; max-width:85%;">${escapeHtml(
@@ -761,7 +831,13 @@
             )}</strong><div style="margin-top:6px">${escapeHtml(
               message
             )}</div><div style="font-size:11px; opacity:0.7; margin-top:8px;"><span class="time">${ts}</span></div></div>`;
+
         messages.appendChild(d);
+
+        // mark appended id
+        if (messageId) appendedMessageIds.add(messageId);
+
+        // keep scroll at bottom
         messages.scrollTop = messages.scrollHeight;
       }
 
