@@ -6,7 +6,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
 
     <style>
-      /* ====== BASE / THEME ====== */
       :root {
         --bg: #0f1724;
         --card: #0b1220;
@@ -19,7 +18,6 @@
         --danger: #ff6b6b;
       }
 
-      /* Reset */
       * {
         box-sizing: border-box;
         margin: 0;
@@ -50,7 +48,6 @@
         padding: 28px;
       }
 
-      /* Page wrapper */
       .app {
         max-width: 1200px;
         margin: 0 auto;
@@ -60,7 +57,6 @@
         min-height: calc(100vh - 56px);
       }
 
-      /* Username modal (initial) */
       #usernameBox {
         position: fixed;
         left: 50%;
@@ -78,6 +74,7 @@
         backdrop-filter: blur(6px);
         z-index: 40;
       }
+
       #usernameBox h2 {
         font-size: 20px;
         margin-bottom: 8px;
@@ -92,6 +89,13 @@
         border-radius: 8px;
         margin-bottom: 12px;
       }
+
+      #username-title {
+        font-size: 24px;
+        padding-bottom: 10px;
+        margin-top: 5px;
+      }
+
       #joinBtn {
         width: 100%;
         padding: 12px;
@@ -104,7 +108,6 @@
         box-shadow: 0 6px 18px rgba(64, 96, 255, 0.12);
       }
 
-      /* Left panel - match + video */
       .card {
         background: linear-gradient(
           180deg,
@@ -125,16 +128,17 @@
         gap: 10px;
         margin-bottom: 12px;
       }
+
       #leftPanelHeader h2 {
         font-size: 18px;
         color: #f3f7ff;
       }
+
       .small-muted {
         color: var(--muted);
         font-size: 13px;
       }
 
-      /* Controls row */
       .controls {
         display: flex;
         gap: 10px;
@@ -142,6 +146,7 @@
         margin-bottom: 12px;
         flex-wrap: wrap;
       }
+
       .btn {
         background: transparent;
         border: 1px solid rgba(255, 255, 255, 0.06);
@@ -151,25 +156,28 @@
         cursor: pointer;
         font-weight: 600;
       }
+
       .btn.primary {
         background: linear-gradient(90deg, #3f80ff, #7b6dff);
         border: 0;
         box-shadow: 0 8px 18px rgba(91, 84, 255, 0.12);
       }
+
       .btn.ghost {
         background: transparent;
       }
+
       .btn.warn {
         background: linear-gradient(90deg, #ff7b7b, #ffb07b);
         border: 0;
       }
 
-      /* Match info */
       #matchStatus {
         font-weight: 700;
         color: #dff1ff;
         margin-bottom: 4px;
       }
+
       #partnerName {
         color: #cfe8ff;
         font-size: 15px;
@@ -177,7 +185,6 @@
         margin-bottom: 12px;
       }
 
-      /* Video container */
       .video-wrap {
         display: flex;
         gap: 14px;
@@ -212,7 +219,6 @@
         object-fit: cover;
       }
 
-      /* Video controls (floating) */
       .video-action-bar {
         position: absolute;
         left: 20px;
@@ -221,6 +227,7 @@
         gap: 10px;
         z-index: 30;
       }
+
       .icon-btn {
         background: rgba(255, 255, 255, 0.03);
         border: 1px solid rgba(255, 255, 255, 0.04);
@@ -229,6 +236,7 @@
         cursor: pointer;
         color: #eaf3ff;
       }
+
       .icon-btn.danger {
         background: linear-gradient(90deg, #ff6b6b, #ff936b);
         color: white;
@@ -236,12 +244,12 @@
         box-shadow: 0 8px 20px rgba(255, 80, 80, 0.12);
       }
 
-      /* Right panel - chat */
       #rightPanel {
         display: flex;
         flex-direction: column;
         gap: 12px;
       }
+
       #chatCard {
         flex: 1;
         display: flex;
@@ -251,11 +259,10 @@
         border-radius: 12px;
       }
 
-      /* Fixed height chat area */
       #messages {
         flex: 1;
-        max-height: 380px; /* FIXED HEIGHT */
-        overflow-y: auto; /* SCROLL ONLY INSIDE CHAT */
+        max-height: 380px;
+        overflow-y: auto;
         padding: 12px;
         border-radius: 10px;
         background: linear-gradient(
@@ -267,7 +274,7 @@
       }
 
       #messages::-webkit-scrollbar {
-        display: none; /* Chrome, Edge, Safari */
+        display: none;
       }
 
       .msg {
@@ -275,9 +282,11 @@
         font-size: 14px;
         line-height: 1.4;
       }
+
       .msg.me {
         text-align: right;
       }
+
       .msg .time {
         font-size: 11px;
         color: var(--muted);
@@ -291,12 +300,12 @@
         min-height: 20px;
       }
 
-      /* Chat input */
       #form {
         display: flex;
         gap: 8px;
         align-items: center;
       }
+
       #input {
         flex: 1;
         padding: 12px 12px;
@@ -306,6 +315,7 @@
         color: #eaf3ff;
         outline: none;
       }
+    
       #form button {
         padding: 10px 14px;
         border-radius: 10px;
@@ -316,7 +326,6 @@
         font-weight: 700;
       }
 
-      /* Online users bottom bar (Mentimeter style) */
       #onlineUsersBox {
         margin-top: 16px;
         padding: 12px 16px;
@@ -339,6 +348,7 @@
         flex-wrap: wrap;
         align-items: center;
       }
+
       .chip {
         padding: 8px 10px;
         border-radius: 999px;
@@ -347,6 +357,7 @@
         color: #eaf3ff;
         font-size: 13px;
       }
+
       .chip .dot {
         width: 8px;
         height: 8px;
@@ -357,15 +368,16 @@
         box-shadow: 0 0 10px rgba(76, 209, 55, 0.08);
       }
 
-      /* small responsive tweaks */
       @media (max-width: 980px) {
         .app {
           grid-template-columns: 1fr;
           padding-bottom: 120px;
         }
+
         #localFloating {
           display: none !important;
         }
+
         #onlineUsersBox {
           position: fixed;
           left: 14px;
@@ -378,17 +390,14 @@
   </head>
 
   <body>
-    <!-- USERNAME MODAL -->
     <div id="usernameBox">
-      <h2>Welcome — Enter your display name</h2>
+      <h2 id="username-title">Welcome — Enter your display name</h2>
       <input id="username" placeholder="Type your name..." />
       <div style="height: 12px"></div>
       <button id="joinBtn">Join Room</button>
     </div>
 
-    <!-- APP LAYOUT -->
     <div class="app" style="display: none" id="appRoot">
-      <!-- LEFT: Match + Video -->
       <div class="card" id="leftPanel">
         <div id="leftPanelHeader">
           <h2>Random Matchmaking</h2>
@@ -431,7 +440,6 @@
         </div>
       </div>
 
-      <!-- RIGHT: Chat -->
       <div id="rightPanel">
         <div class="card" id="chatCard">
           <div
@@ -484,7 +492,6 @@
     <script>
       const socket = io();
 
-      // DOM
       const usernameBox = document.getElementById("usernameBox");
       const usernameInput = document.getElementById("username");
       const joinBtn = document.getElementById("joinBtn");
@@ -515,7 +522,6 @@
 
       const onlineChips = document.getElementById("onlineChips");
 
-      // state
       let username = null;
       window.currentRoom = null;
       let partnerId = null;
@@ -524,9 +530,7 @@
       let cameraEnabled = true;
       let micEnabled = true;
 
-      // de-dup helpers
       let lastSent = { message: null, time: 0, id: null };
-      // Keep a Set of appended messageIds
       const appendedMessageIds = new Set();
 
       const rtcConfig = {
@@ -536,7 +540,6 @@
         ],
       };
 
-      // ====== JOIN FLOW ======
       joinBtn.onclick = () => {
         username = usernameInput.value.trim();
         if (!username) {
@@ -549,7 +552,6 @@
         appRoot.style.display = "grid";
       };
 
-      // ====== QUEUE / MATCH CONTROLS ======
       findRandomBtn.onclick = () => {
         socket.emit("findRandom");
         matchStatus.textContent = "Searching for partner...";
@@ -577,7 +579,6 @@
         nextBtn.disabled = true;
       };
 
-      // ====== SOCKET EVENTS (app-level) ======
       socket.on("queued", () => {
         matchStatus.textContent = "Waiting for partner...";
       });
@@ -617,7 +618,6 @@
         stopPeer();
       });
 
-      // ====== CHAT ======
       form.addEventListener("submit", (e) => {
         e.preventDefault();
         if (!window.currentRoom) return;
@@ -625,7 +625,6 @@
         const msg = input.value.trim();
         if (!msg) return;
 
-        // create a durable messageId (client-generated)
         const msgId =
           (socket.id || "local") +
           "_" +
@@ -633,10 +632,8 @@
           "_" +
           Math.random().toString(36).slice(2, 8);
 
-        // store lastSent for fallback duplicate detection
         lastSent = { message: msg, time: Date.now(), id: msgId };
 
-        // send to server - include messageId and username
         socket.emit("roomMessage", {
           room: window.currentRoom,
           message: msg,
@@ -644,7 +641,6 @@
           user: username,
         });
 
-        // append local bubble (marked with data-msgid)
         appendMessage({
           user: "You",
           message: msg,
@@ -656,14 +652,11 @@
         input.value = "";
       });
 
-      // Server message handler - robust dedupe
       socket.on("roomMessage", ({ user, message, time, messageId }) => {
-        // If server includes messageId and we've already appended it -> skip
         if (messageId && appendedMessageIds.has(messageId)) {
           return;
         }
 
-        // Fallback: if server doesn't send messageId, ignore echoes that match our last sent msg (within 3s)
         if (
           !messageId &&
           user === username &&
@@ -673,17 +666,15 @@
           return;
         }
 
-        // Finally append and mark messageId as appended (if present)
         appendMessage({
           user,
           message,
           time: time || new Date().toISOString(),
-          self: user === username ? false : false, // received messages are always appended as other
+          self: user === username ? false : false,
           messageId,
         });
       });
 
-      // typing notifications
       let typingTimeout;
       input.oninput = () => {
         if (!window.currentRoom) return;
@@ -701,7 +692,6 @@
         typing.textContent = isTyping ? `${user} is typing...` : "";
       });
 
-      // ====== ONLINE USERS ======
       socket.on("onlineUsers", (users) => {
         onlineChips.innerHTML = "";
         users.forEach((u) => {
@@ -712,7 +702,6 @@
         });
       });
 
-      // ====== WEBRTC SIGNALING & HANDLERS ======
       socket.on("webrtc-offer", async ({ offer }) => {
         if (!pc) await startVideoCall(false);
         await pc.setRemoteDescription(new RTCSessionDescription(offer));
@@ -743,7 +732,6 @@
         matchStatus.textContent = "Call ended.";
       });
 
-      // ====== RTC FUNCTIONS ======
       async function startVideoCall(isCaller) {
         try {
           localStream = await navigator.mediaDevices.getUserMedia({
@@ -756,7 +744,6 @@
           return;
         }
 
-        // set local floating preview
         localVideo.srcObject = localStream;
         showLocalFloating();
 
@@ -770,7 +757,6 @@
         remoteVideo.srcObject = remoteStream;
 
         pc.ontrack = (event) => {
-          // attach tracks to remote stream
           event.streams[0].getTracks().forEach((t) => remoteStream.addTrack(t));
         };
 
@@ -783,7 +769,6 @@
           }
         };
 
-        // show UI hints
         matchStatus.textContent = "In call";
         localFloating.style.display = "block";
 
@@ -812,9 +797,7 @@
         localVideo.srcObject = null;
       }
 
-      // ====== UI helpers ======
       function appendMessage({ user, message, time, self, messageId }) {
-        // Avoid appending if messageId already appended
         if (messageId && appendedMessageIds.has(messageId)) return;
 
         const d = document.createElement("div");
@@ -834,10 +817,8 @@
 
         messages.appendChild(d);
 
-        // mark appended id
         if (messageId) appendedMessageIds.add(messageId);
 
-        // keep scroll at bottom
         messages.scrollTop = messages.scrollHeight;
       }
 
@@ -848,7 +829,6 @@
         localFloating.style.display = "none";
       }
 
-      // video control buttons
       muteBtn.onclick = () => {
         if (!localStream) return;
         micEnabled = !micEnabled;
@@ -872,7 +852,6 @@
         stopPeer();
       };
 
-      // escape HTML utility
       function escapeHtml(unsafe) {
         if (!unsafe && unsafe !== 0) return "";
         return String(unsafe)
@@ -883,7 +862,6 @@
           .replace(/'/g, "&#039;");
       }
 
-      // graceful unload: leave queue & socket disconnect
       window.addEventListener("beforeunload", () => {
         try {
           socket.emit("leaveQueue");
@@ -893,17 +871,14 @@
         } catch (e) {}
       });
 
-      // initial small UX: keyboard enter to join on modal
       usernameInput.addEventListener("keydown", (e) => {
         if (e.key === "Enter") joinBtn.click();
       });
 
-      // keep messages scroll bottom on resize
       window.addEventListener("resize", () => {
         messages.scrollTop = messages.scrollHeight;
       });
 
-      // small visual fallback if socket.io script failed to load
       setTimeout(() => {
         if (typeof io === "undefined") {
           alert(
