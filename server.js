@@ -185,7 +185,7 @@ io.on("connection", (socket) => {
           "No partner found in a reasonable time, Try again."
         );
       }
-    }, 15000);
+    }, 60000);
 
     waitingTimeouts.set(socket.id, to);
 
@@ -213,7 +213,7 @@ io.on("connection", (socket) => {
           removeFromQueue(socket.id);
           socket.emit("noMatch", "No partner found. Try again.");
         }
-      }, 150000);
+      }, 600000);
       waitingTimeouts.set(socket.id, to);
       tryMatch();
     }
@@ -273,6 +273,6 @@ app.get("/", (_, res) => {
   res.sendFile(__dirname + "/index.html");
 });
 
-server.listen(15000, () => {
-  console.log("Server running on http://localhost:15000");
+server.listen(60000, () => {
+  console.log("Server running on http://localhost:60000");
 });
