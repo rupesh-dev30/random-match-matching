@@ -19,7 +19,6 @@
         gap: 20px;
       }
 
-      /* LEFT PANEL */
       #leftPanel {
         flex: 3;
         background: white;
@@ -28,7 +27,6 @@
         box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
       }
 
-      /* RIGHT PANEL */
       #rightPanel {
         flex: 1;
         background: white;
@@ -43,10 +41,6 @@
         color: #333;
       }
 
-      #chatArea {
-        display: none;
-      }
-
       #welcomeBox {
         padding: 15px;
         margin-bottom: 15px;
@@ -57,10 +51,33 @@
         font-size: 16px;
       }
 
-      #matchControls {
+      #videoArea {
+        display: none;
+        margin: 20px 0;
         display: flex;
         gap: 10px;
-        margin-bottom: 15px;
+      }
+
+      #remoteVideo {
+        width: 70%;
+        height: 250px;
+        background: black;
+        border-radius: 8px;
+        object-fit: cover;
+      }
+
+      #localVideo {
+        width: 28%;
+        height: 120px;
+        background: black;
+        border-radius: 8px;
+        object-fit: cover;
+      }
+
+      .videoControls {
+        display: none;
+        gap: 10px;
+        margin-bottom: 20px;
       }
 
       button {
@@ -73,24 +90,24 @@
         font-size: 15px;
       }
 
-      button:hover {
-        background: #0050d8;
-      }
-
       button:disabled {
         background: #9dbdff;
         cursor: not-allowed;
       }
 
+      button.small {
+        padding: 8px 12px;
+        font-size: 14px;
+      }
+
       #matchStatus {
-        margin: 10px 0;
         font-weight: bold;
-        font-size: 16px;
+        margin-bottom: 8px;
       }
 
       #partnerName {
-        color: #444;
-        margin-bottom: 10px;
+        color: #333;
+        margin-bottom: 15px;
       }
 
       #privateChatArea {
@@ -100,7 +117,7 @@
 
       #messages {
         border: 1px solid #ccc;
-        height: 300px;
+        height: 200px;
         overflow-y: scroll;
         padding: 10px;
         background: #fafafa;
@@ -126,22 +143,15 @@
         font-style: italic;
       }
 
-      /* ONLINE USERS PANEL */
-      #onlineUsers {
-        list-style: none;
-        padding-left: 0;
-      }
-
       #onlineUsers li {
+        list-style: none;
         padding: 8px;
+        margin-bottom: 6px;
         background: #f7f9fc;
         border-radius: 5px;
-        margin-bottom: 6px;
-        font-size: 14px;
         border: 1px solid #dde3ea;
       }
 
-      /* USERNAME INPUT BOX */
       #usernameBox {
         background: white;
         padding: 20px;
@@ -159,26 +169,17 @@
         border: 1px solid #bbb;
         margin-bottom: 10px;
       }
-
-      #welcomeUsername {
-        font-weight: bold;
-        color: #0066ff;
-      }
     </style>
   </head>
 
   <body>
-    <!-- USERNAME LOGIN -->
     <div id="usernameBox">
       <h2>Enter Your Name</h2>
       <input id="username" placeholder="Your name..." />
-      <br />
       <button id="joinBtn">Join</button>
     </div>
 
-    <!-- MAIN UI -->
     <div id="container" style="display: none">
-      <!-- LEFT PANEL -->
       <div id="leftPanel">
         <h2>Random Matchmaking</h2>
 
@@ -186,7 +187,6 @@
           Welcome, <span id="welcomeUsername"></span> 👋
         </div>
 
-        <!-- Match Controls -->
         <div id="matchControls">
           <button id="findRandomBtn">Find Random</button>
           <button id="nextBtn" disabled>Next</button>
@@ -198,7 +198,19 @@
         <div id="matchStatus"></div>
         <div id="partnerName"></div>
 
-        <!-- PRIVATE CHAT -->
+        <!-- VIDEO -->
+        <div id="videoArea">
+          <video id="remoteVideo" autoplay playsinline></video>
+          <video id="localVideo" autoplay muted playsinline></video>
+        </div>
+
+        <div class="videoControls" id="videoControls">
+          <button class="small" id="muteBtn">Mute</button>
+          <button class="small" id="cameraBtn">Camera Off</button>
+          <button class="small" id="endCallBtn">End Call</button>
+        </div>
+
+        <!-- CHAT -->
         <div id="privateChatArea">
           <h3>Chat</h3>
           <div id="messages"></div>
@@ -216,14 +228,12 @@
         </div>
       </div>
 
-      <!-- RIGHT PANEL -->
       <div id="rightPanel">
         <h3>Online Users</h3>
         <ul id="onlineUsers"></ul>
       </div>
     </div>
 
-    <!-- Socket.IO -->
     <script src="/socket.io/socket.io.js"></script>
 
     <script>
@@ -231,9 +241,10 @@
 
       // DOM refs
       const usernameBox = document.getElementById("usernameBox");
-      const container = document.getElementById("container");
-
       const usernameInput = document.getElementById("username");
+      const joinBtn = document.getElementById("joinBtn");
+
+      const container = document.getElementById("container");
       const welcomeUsername = document.getElementById("welcomeUsername");
 
       const findRandomBtn = document.getElementById("findRandomBtn");
@@ -243,121 +254,131 @@
       const matchStatus = document.getElementById("matchStatus");
       const partnerName = document.getElementById("partnerName");
 
+      const videoArea = document.getElementById("videoArea");
+      const videoControls = document.getElementById("videoControls");
+
+      const localVideo = document.getElementById("localVideo");
+      const remoteVideo = document.getElementById("remoteVideo");
+
+      const muteBtn = document.getElementById("muteBtn");
+      const cameraBtn = document.getElementById("cameraBtn");
+      const endCallBtn = document.getElementById("endCallBtn");
+
       const privateChatArea = document.getElementById("privateChatArea");
       const messages = document.getElementById("messages");
       const input = document.getElementById("input");
-      const form = document.getElementById("form");
       const typing = document.getElementById("typing");
+      const form = document.getElementById("form");
 
-      const onlineUsersList = document.getElementById("onlineUsers");
+      const onlineUsers = document.getElementById("onlineUsers");
 
       let username = null;
       window.currentRoom = null;
+      let partnerId = null;
 
-      /***********************
-       * JOIN WITH USERNAME
-       ***********************/
-      document.getElementById("joinBtn").onclick = () => {
+      // WebRTC
+      let pc = null;
+      let localStream = null;
+      let cameraEnabled = true;
+      let micEnabled = true;
+
+      const rtcConfig = {
+        iceServers: [
+          { urls: "stun:stun.l.google.com:19302" },
+          { urls: "stun:stun1.l.google.com:19302" },
+        ],
+      };
+
+      joinBtn.onclick = () => {
         username = usernameInput.value.trim();
         if (!username) return;
-
         socket.emit("join", username);
 
         welcomeUsername.textContent = username;
-
         usernameBox.style.display = "none";
         container.style.display = "flex";
       };
 
-      /***********************
-       * MATCH FLOW
-       ***********************/
       findRandomBtn.onclick = () => {
         socket.emit("findRandom");
-        matchStatus.textContent = "Searching for a partner...";
-        privateChatArea.style.display = "none";
+        matchStatus.textContent = "Searching for partner...";
         partnerName.textContent = "";
+        privateChatArea.style.display = "none";
+        hideVideo();
         leaveQueueBtn.style.display = "inline-block";
       };
 
       leaveQueueBtn.onclick = () => {
         socket.emit("leaveQueue");
-        matchStatus.textContent = "Stopped searching.";
         leaveQueueBtn.style.display = "none";
       };
 
       nextBtn.onclick = () => {
         socket.emit("next");
+        hideVideo();
         privateChatArea.style.display = "none";
         partnerName.textContent = "";
         nextBtn.disabled = true;
       };
 
       socket.on("queued", () => {
-        matchStatus.textContent = "Waiting for another user...";
-        privateChatArea.style.display = "none";
+        matchStatus.textContent = "Waiting for partner...";
       });
 
       socket.on("noMatch", (msg) => {
         matchStatus.textContent = msg;
+        partnerName.textContent = "";
         privateChatArea.style.display = "none";
-        window.currentRoom = null;
-        leaveQueueBtn.style.display = "none";
+        hideVideo();
       });
 
-      socket.on("matched", ({ room, partnerName: p }) => {
+      socket.on("matched", ({ room, partnerId: pId, partnerName: pName }) => {
         window.currentRoom = room;
-        matchStatus.textContent = "Matched!";
-        partnerName.textContent = "Connected to: " + p;
+        partnerId = pId;
 
+        matchStatus.textContent = "Matched!";
+        partnerName.textContent = "Connected to: " + pName;
+
+        privateChatArea.style.display = "block";
         nextBtn.disabled = false;
         leaveQueueBtn.style.display = "none";
-
         messages.innerHTML = "";
-        privateChatArea.style.display = "block";
+
+        const initiator = socket.id < partnerId;
+        startVideoCall(initiator);
       });
 
       socket.on("partnerLeft", () => {
-        matchStatus.textContent = "Your partner left.";
-        privateChatArea.style.display = "none";
-        partnerName.textContent = "";
-        nextBtn.disabled = true;
-        window.currentRoom = null;
+        matchStatus.textContent = "Partner left.";
+        hideVideo();
+        stopPeer();
       });
 
-      /***********************
-       * CHAT MESSAGES
-       ***********************/
+      // -----------------------------
+      // CHAT
+      // -----------------------------
       form.addEventListener("submit", (e) => {
         e.preventDefault();
-
         if (!window.currentRoom) return;
 
-        const text = input.value.trim();
-        if (!text) return;
+        const msg = input.value.trim();
+        if (!msg) return;
 
-        socket.emit("roomMessage", { room: window.currentRoom, message: text });
-
+        socket.emit("roomMessage", { room: window.currentRoom, message: msg });
         input.value = "";
       });
 
       socket.on("roomMessage", ({ user, message, time }) => {
-        const ts = new Date(time).toLocaleTimeString();
-        addMessage(`[${ts}] ${user}: ${message}`);
+        addMessage(
+          `[${new Date(time).toLocaleTimeString()}] ${user}: ${message}`
+        );
       });
 
-      /***********************
-       * TYPING INDICATOR
-       ***********************/
       let typingTimeout;
-
-      input.addEventListener("input", () => {
+      input.oninput = () => {
         if (!window.currentRoom) return;
 
-        socket.emit("roomTyping", {
-          room: window.currentRoom,
-          isTyping: true,
-        });
+        socket.emit("roomTyping", { room: window.currentRoom, isTyping: true });
 
         clearTimeout(typingTimeout);
         typingTimeout = setTimeout(() => {
@@ -366,27 +387,151 @@
             isTyping: false,
           });
         }, 700);
-      });
+      };
 
       socket.on("roomTyping", ({ user, isTyping }) => {
         typing.textContent = isTyping ? `${user} is typing...` : "";
       });
 
-      /***********************
-       * ONLINE USERS
-       ***********************/
+      // -----------------------------
+      // ONLINE USERS
+      // -----------------------------
       socket.on("onlineUsers", (users) => {
-        onlineUsersList.innerHTML = "";
+        onlineUsers.innerHTML = "";
         users.forEach((u) => {
           const li = document.createElement("li");
           li.textContent = u;
-          onlineUsersList.appendChild(li);
+          onlineUsers.appendChild(li);
         });
       });
 
-      /***********************
-       * HELPERS
-       ***********************/
+      // -----------------------------
+      // WEBRTC SIGNAL HANDLERS
+      // -----------------------------
+      socket.on("webrtc-offer", async ({ offer }) => {
+        if (!pc) await startVideoCall(false);
+
+        await pc.setRemoteDescription(new RTCSessionDescription(offer));
+        const answer = await pc.createAnswer();
+        await pc.setLocalDescription(answer);
+
+        socket.emit("webrtc-answer", { room: window.currentRoom, answer });
+      });
+
+      socket.on("webrtc-answer", async ({ answer }) => {
+        if (pc) {
+          await pc.setRemoteDescription(new RTCSessionDescription(answer));
+        }
+      });
+
+      socket.on("webrtc-ice", async ({ candidate }) => {
+        if (pc && candidate) {
+          try {
+            await pc.addIceCandidate(candidate);
+          } catch (err) {}
+        }
+      });
+
+      socket.on("endCall", () => {
+        hideVideo();
+        stopPeer();
+        matchStatus.textContent = "Call ended.";
+      });
+
+      // -----------------------------
+      // RTC FUNCTIONS
+      // -----------------------------
+      async function startVideoCall(isCaller) {
+        localStream = await navigator.mediaDevices.getUserMedia({
+          video: true,
+          audio: true,
+        });
+
+        localVideo.srcObject = localStream;
+
+        pc = new RTCPeerConnection(rtcConfig);
+
+        localStream.getTracks().forEach((track) => {
+          pc.addTrack(track, localStream);
+        });
+
+        const remoteStream = new MediaStream();
+        remoteVideo.srcObject = remoteStream;
+
+        pc.ontrack = (event) => {
+          event.streams[0].getTracks().forEach((t) => remoteStream.addTrack(t));
+        };
+
+        pc.onicecandidate = (event) => {
+          if (event.candidate) {
+            socket.emit("webrtc-ice", {
+              room: window.currentRoom,
+              candidate: event.candidate,
+            });
+          }
+        };
+
+        showVideo();
+
+        if (isCaller) {
+          const offer = await pc.createOffer();
+          await pc.setLocalDescription(offer);
+
+          socket.emit("webrtc-offer", {
+            room: window.currentRoom,
+            offer,
+          });
+        }
+      }
+
+      function stopPeer() {
+        if (pc) pc.close();
+        pc = null;
+
+        if (localStream) {
+          localStream.getTracks().forEach((track) => track.stop());
+        }
+
+        localStream = null;
+      }
+
+      function showVideo() {
+        videoArea.style.display = "flex";
+        videoControls.style.display = "flex";
+      }
+
+      function hideVideo() {
+        videoArea.style.display = "none";
+        videoControls.style.display = "none";
+      }
+
+      // -----------------------------
+      // VIDEO CONTROLS
+      // -----------------------------
+      muteBtn.onclick = () => {
+        if (!localStream) return;
+        micEnabled = !micEnabled;
+        localStream.getAudioTracks().forEach((t) => (t.enabled = micEnabled));
+        muteBtn.textContent = micEnabled ? "Mute" : "Unmute";
+      };
+
+      cameraBtn.onclick = () => {
+        if (!localStream) return;
+        cameraEnabled = !cameraEnabled;
+        localStream
+          .getVideoTracks()
+          .forEach((t) => (t.enabled = cameraEnabled));
+        cameraBtn.textContent = cameraEnabled ? "Camera Off" : "Camera On";
+      };
+
+      endCallBtn.onclick = () => {
+        if (!window.currentRoom) return;
+
+        socket.emit("endCall", { room: window.currentRoom });
+        hideVideo();
+        stopPeer();
+      };
+
       function addMessage(msg) {
         const div = document.createElement("div");
         div.textContent = msg;

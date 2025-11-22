@@ -125,6 +125,35 @@ io.on("connection", (socket) => {
     io.emit("onlineUsers", Array.from(users.values()));
   });
 
+  // Offer from caller -> forward to other peer(s) in room
+  socket.on("webrtc-offer", ({ room, offer }) => {
+    socket.to(room).emit("webrtc-offer", { from: socket.id, offer });
+  });
+
+  // Answer from callee -> forward back to caller
+  socket.on("webrtc-answer", ({ room, answer }) => {
+    socket.to(room).emit("webrtc-answer", { from: socket.id, answer });
+  });
+
+  // ICE candidates -> forward to other peer(s)
+  socket.on("webrtc-ice", ({ room, candidate }) => {
+    socket.to(room).emit("webrtc-ice", { from: socket.id, candidate });
+  });
+
+  // End call - forwarded
+  socket.on("endCall", ({ room }) => {
+    socket.to(room).emit("endCall", { from: socket.id });
+    // optional cleanup: remove users from room mapping & make them free to requeue
+    const clients = io.sockets.adapter.rooms.get(room);
+    if (clients) {
+      for (const clientId of clients) {
+        userRoom.delete(clientId);
+        const s = io.sockets.sockets.get(clientId);
+        if (s) s.leave(room);
+      }
+    }
+  });
+
   // REQUEST TO JOIN RANDOM MATCHMATCHING QUEUE
   socket.on("findRandom", () => {
     // IF ALREADY IN A ROOM, IGNORE OR ASK TO LEAVE FIRST
@@ -175,7 +204,7 @@ io.on("connection", (socket) => {
     // AUTOMATICALLY RE-ENTER QUEUE FOR A NEW PARTNER
     socket.emit("leftRoom");
     socket.emit("queued");
-    
+
     if (!queueSet.has(socket.id)) {
       matchmakingQueue.push(socket.id);
       queueSet.add(socket.id);
